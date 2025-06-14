@@ -1,0 +1,13 @@
+services:
+  # The Go Application Service
+  app:
+    build: . # Build the image from the Dockerfile in the current directory
+    container_name: auth_service
+    restart: on-failure
+    env_file:
+      - db_url.txt # Injects the DATABASE_URL variable
+    # 'extra_hosts' is a fallback for some older Docker versions or Linux,
+    # but 'host.docker.internal' is preferred and works out-of-the-box
+    # on modern Docker Desktop for Windows/Mac.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
