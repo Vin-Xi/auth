@@ -1,11 +1,16 @@
-package internal
+package database
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/Vin-Xi/auth/internal/user"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+type PostgresRepository struct {
+	db *pgxpool.Pool
+}
 
 func InitDB(ctx context.Context, db_url string) (*pgxpool.Pool, error) {
 	if db_url == "" {
@@ -27,4 +32,12 @@ func InitDB(ctx context.Context, db_url string) (*pgxpool.Pool, error) {
 	fmt.Println("Connection is successful!")
 
 	return pool, nil
+}
+
+func NewPostresRepository(db *pgxpool.Pool) *PostgresRepository {
+	return &PostgresRepository{db: db}
+}
+
+func (r *PostgresRepository) CreateUser(ctx context.Context, user *user.User) {
+
 }
