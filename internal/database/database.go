@@ -40,19 +40,19 @@ func NewPostresRepository(db *pgxpool.Pool) *PostgresRepository {
 }
 
 func (r *PostgresRepository) CreateUser(ctx context.Context, u *user.User) error {
-	query := `INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, created_at, updated_at`
+	query := `INSERT INTO auth.users (email, password_hash) VALUES ($1, $2) RETURNING id, created_at, updated_at`
 
 	err := r.db.QueryRow(ctx, query, u.Email, u.PasswordHash).Scan(&u.ID, &u.CreatedAt, &u.UpdatedAt)
 
 	if err != nil {
-		return fmt.Errorf("failed to create user")
+		return fmt.Errorf("failed to create user: %w", err)
 	}
 
 	return nil
 }
 
 func (r *PostgresRepository) GetUserByEmail(ctx context.Context, email string) (*user.User, error) {
-	query := `SELECT id, email, password_hash, created_at, updated_at FROM users where email = $1`
+	query := `SELECT id, email, password_hash, created_at, updated_at FROM auth.users where email = $1`
 	u := &user.User{}
 	err := r.db.QueryRow(ctx, query, email).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 
@@ -64,7 +64,7 @@ func (r *PostgresRepository) GetUserByEmail(ctx context.Context, email string) (
 }
 
 func (r *PostgresRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*user.User, error) {
-	query := `SELECT id, email, password_hash, created_at, updated_at FROM users where id = $1`
+	query := `SELECT id, email, password_hash, created_at, updated_at FROM auth.users where id = $1`
 	u := &user.User{}
 	err := r.db.QueryRow(ctx, query, id).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 

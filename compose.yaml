@@ -6,8 +6,11 @@ services:
     restart: on-failure
     env_file:
       - db_url.txt # Injects the DATABASE_URL variable
+      - jwt_secret.txt
     # 'extra_hosts' is a fallback for some older Docker versions or Linux,
     # but 'host.docker.internal' is preferred and works out-of-the-box
     # on modern Docker Desktop for Windows/Mac.
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    ports:
+      - "8080:8080"

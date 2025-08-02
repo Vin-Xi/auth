@@ -1,2 +1,3 @@
 db_url.txt
 scripts/**
+jwt_secret.txt

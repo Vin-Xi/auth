@@ -1,6 +1,7 @@
-package http
+package transport
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Vin-Xi/auth/internal/service"
@@ -10,8 +11,8 @@ import (
 )
 
 type UserHandler struct {
-	userService service.Service
-	jwtEngine   util.JWTEngine
+	UserService service.Service
+	JwtEngine   *util.JWTEngine
 }
 
 func (h *UserHandler) RegisterRoutes(router *gin.Engine) {
@@ -39,9 +40,10 @@ func (h *UserHandler) register(c *gin.Context) {
 		return
 	}
 
-	_, err := h.userService.Register(c.Request.Context(), req.Email, req.Password)
+	_, err := h.UserService.Register(c.Request.Context(), req.Email, req.Password)
 
 	if err != nil {
+		fmt.Println(req.Email, req.Password, err)
 		if err == service.ErrUserAlreadyExists {
 			c.JSON(http.StatusConflict, gin.H{"error": "user already exists"})
 			return
@@ -66,14 +68,14 @@ func (h *UserHandler) login(c *gin.Context) {
 		return
 	}
 
-	u, err := h.userService.Login(c.Request.Context(), req.Email, req.Password)
+	u, err := h.UserService.Login(c.Request.Context(), req.Email, req.Password)
 
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
 
-	token, err := h.jwtEngine.Generate(u.ID)
+	token, err := h.JwtEngine.Generate(u.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
 		return
