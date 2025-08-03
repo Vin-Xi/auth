@@ -39,10 +39,15 @@ func main() {
 	userRepo := database.NewPostresRepository(pool)
 	userService := service.NewService(userRepo)
 	jwtEngine := util.NewJWTEngine(jwtSecret, 15*time.Minute)
-	httpHandler := transport.UserHandler{UserService: userService, JwtEngine: jwtEngine}
+	userHttpHandler := transport.UserHandler{UserService: userService, JwtEngine: jwtEngine}
+	webHttpHandler := transport.WebHandler{}
 
 	router := gin.Default()
-	httpHandler.RegisterRoutes(router)
+
+	router.LoadHTMLGlob("internal/templates/*")
+
+	webHttpHandler.RegisterRoutes(router)
+	userHttpHandler.RegisterRoutes(router)
 
 	server := &http.Server{
 		Addr:    ":" + "8080",
