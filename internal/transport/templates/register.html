@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Golden Login</title>
+    <title>Auth - Register</title>
     <link rel="stylesheet" href="styles.css" />
+
     <style>
       /* Golden Color Palette */
       :root {
@@ -61,6 +62,11 @@
         margin-bottom: 20px;
       }
 
+      .merged {
+        display: flex;
+        column-gap: 20px;
+      }
+
       .input-group label {
         display: block;
         margin-bottom: 8px;
@@ -115,20 +121,34 @@
   <body>
     <div class="login-container">
       <div class="login-box">
-        <h2>Welcome Back</h2>
-        <form method="POST" action="/login">
+        <h2>Create Account</h2>
+        <form method="POST">
+          <div class="merged">
+            <div class="input-group">
+              <label for="fName">First Name</label>
+              <input type="text" id="fName" name="fName" required />
+            </div>
+            <div class="input-group">
+              <label for="lName">Last Name</label>
+              <input type="text" id="lName" name="lName" required />
+            </div>
+          </div>
           <div class="input-group">
             <label for="email">Email</label>
-            <input type="email" id="email" required />
+            <input type="email" id="email" name="email" required />
           </div>
           <div class="input-group">
             <label for="password">Password</label>
-            <input type="password" id="password" required />
+            <input type="password" id="password" name="password" required />
           </div>
-          <button type="submit" class="login-button">Login</button>
+          <div class="input-group">
+            <label for="confirm-password">Confirm Password</label>
+            <input type="password" id="confirm-password" required />
+          </div>
+          <button type="submit" class="login-button">Sign Up</button>
         </form>
         <p class="signup-link">
-          Don't have an account? <a href="#">Sign up</a>
+          Already have an account? <a href="/login">Log in</a>
         </p>
       </div>
     </div>

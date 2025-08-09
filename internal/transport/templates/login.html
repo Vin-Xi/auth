@@ -3,9 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Golden Sign Up</title>
+    <title>Golden Login</title>
     <link rel="stylesheet" href="styles.css" />
-
     <style>
       /* Golden Color Palette */
       :root {
@@ -116,12 +115,8 @@
   <body>
     <div class="login-container">
       <div class="login-box">
-        <h2>Create Account</h2>
-        <form action="/register" method="POST">
-          <div class="input-group">
-            <label for="name">Full Name</label>
-            <input type="text" id="name" required />
-          </div>
+        <h2>Welcome Back</h2>
+        <form method="POST">
           <div class="input-group">
             <label for="email">Email</label>
             <input type="email" id="email" required />
@@ -130,14 +125,10 @@
             <label for="password">Password</label>
             <input type="password" id="password" required />
           </div>
-          <div class="input-group">
-            <label for="confirm-password">Confirm Password</label>
-            <input type="password" id="confirm-password" required />
-          </div>
-          <button type="submit" class="login-button">Sign Up</button>
+          <button type="submit" class="login-button">Login</button>
         </form>
         <p class="signup-link">
-          Already have an account? <a href="index.html">Log in</a>
+          Don't have an account? <a href="#">Sign up</a>
         </p>
       </div>
     </div>

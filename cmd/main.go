@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,6 +13,7 @@ import (
 	internal "github.com/Vin-Xi/auth/internal/database"
 	"github.com/Vin-Xi/auth/internal/transport"
 	util "github.com/Vin-Xi/auth/internal/util"
+	"github.com/Vin-Xi/auth/pkg/logger"
 	"github.com/gin-gonic/gin"
 
 	service "github.com/Vin-Xi/auth/internal/service"
@@ -24,14 +23,14 @@ func main() {
 	databaseUrl := os.Getenv("DATABASE_URL")
 	jwtSecret := os.Getenv("JWT_SECRET")
 	ctx := context.Background()
-	fmt.Print(databaseUrl)
+
+	logger.Init()
+
 	pool, err := internal.InitDB(ctx, databaseUrl)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "db initialization failed: %v", err)
+		logger.Log.ErrorWithStack("Operation failed", err)
 		os.Exit(1)
-	} else {
-		fmt.Println("Connection is successful!")
 	}
 
 	defer pool.Close()
@@ -44,8 +43,7 @@ func main() {
 
 	router := gin.Default()
 
-	router.LoadHTMLGlob("internal/templates/*")
-
+	transport.SetTemplateFS(router)
 	webHttpHandler.RegisterRoutes(router)
 	userHttpHandler.RegisterRoutes(router)
 
@@ -55,24 +53,25 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("Server Listing on 3001")
+		logger.Log.Info("Server started listening on 8080")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
+			logger.Log.ErrorWithStack("Fatal error", err)
 		}
 	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Println("Shut down")
+
+	logger.Log.Info("Shut down")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shut down")
+		logger.Log.Info("Server forced to shut down")
 	}
 
-	log.Println("Server exiting")
+	logger.Log.Info("Server exiting")
 }

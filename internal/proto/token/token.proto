@@ -1,0 +1,21 @@
+// In a new proto/auth/auth.proto file
+syntax = "proto3";
+package auth;
+option go_package = "github.com/Vin-Xi/auth/gen/token";
+
+// The request message contains the token to be verified
+message VerifyTokenRequest {
+  string token = 1;
+}
+
+// The response message contains the authenticated user's info
+message VerifyTokenResponse {
+  string user_id = 1;
+  string email = 2;
+  bool is_active = 3;
+}
+
+// The authentication service definition
+service AuthService {
+  rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+}

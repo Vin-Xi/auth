@@ -7,6 +7,7 @@ import (
 
 	"github.com/Vin-Xi/auth/internal/user"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -16,7 +17,7 @@ var (
 )
 
 type Service interface {
-	Register(ctx context.Context, email string, password string) (*user.User, error)
+	Register(ctx context.Context, email string, password string, fName string, lName string) (*user.User, error)
 	Login(ctx context.Context, email string, password string) (*user.User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*user.User, error)
 }
@@ -31,7 +32,7 @@ func NewService(repo user.UserRepository) Service {
 	}
 }
 
-func (s *service) Register(ctx context.Context, email string, password string) (*user.User, error) {
+func (s *service) Register(ctx context.Context, email string, password string, fName string, lName string) (*user.User, error) {
 	if _, err := s.repo.GetUserByEmail(ctx, email); err == nil {
 		return nil, ErrUserAlreadyExists
 	}
@@ -45,6 +46,8 @@ func (s *service) Register(ctx context.Context, email string, password string) (
 	user := &user.User{
 		Email:        email,
 		PasswordHash: string(hashedPass),
+		FirstName:    pgtype.Text{String: fName, Valid: true},
+		LastName:     pgtype.Text{String: lName, Valid: true},
 	}
 
 	if err := s.repo.CreateUser(ctx, user); err != nil {

@@ -2,11 +2,13 @@ package transport
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
+	"net/url"
 
 	"github.com/Vin-Xi/auth/internal/service"
-	"github.com/Vin-Xi/auth/internal/user"
 	"github.com/Vin-Xi/auth/internal/util"
+	"github.com/Vin-Xi/auth/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,87 +18,57 @@ type UserHandler struct {
 }
 
 func (h *UserHandler) RegisterRoutes(router *gin.Engine) {
-	api := router.Group("/api/v1")
-	{
-		api.POST("/register", h.register)
-		api.POST("/login", h.login)
-
-		protected := api.Group("/").Use(h.authMiddleware())
-		{
-			protected.GET("/profile", h.getProfile)
-		}
-	}
-}
-
-type registerReq struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8"`
+	router.POST("/register", h.register)
+	router.POST("/login", h.login)
 }
 
 func (h *UserHandler) register(c *gin.Context) {
-	var req registerReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	email := c.PostForm("email")
+	password := c.PostForm("password")
+	firstName := c.PostForm("fName")
+	lastName := c.PostForm("lName")
 
-	_, err := h.UserService.Register(c.Request.Context(), req.Email, req.Password)
+	_, err := h.UserService.Register(c.Request.Context(), email, password, firstName, lastName)
+	fmt.Println(email, password, firstName, lastName)
 
 	if err != nil {
-		fmt.Println(req.Email, req.Password, err)
+		fmt.Println(email, password, err)
 		if err == service.ErrUserAlreadyExists {
-			c.JSON(http.StatusConflict, gin.H{"error": "user already exists"})
+			slog.Info("user already exists")
+			c.Redirect(http.StatusFound, "/register?error=Already+Exists")
 			return
 		}
+		logger.Log.ErrorWithStack("failed to create user", err)
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to register user"})
+		c.Redirect(http.StatusFound, "/register?error=Registration+Failed")
 		return
 	}
+	fmt.Println(email, password)
 
-	c.JSON(http.StatusCreated, gin.H{"message": "user successfully registered"})
-}
-
-type loginReq struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+	c.Redirect(http.StatusFound, "/log")
 }
 
 func (h *UserHandler) login(c *gin.Context) {
-	var req loginReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	redirectURI := c.Query("redirect_uri")
 
-	u, err := h.UserService.Login(c.Request.Context(), req.Email, req.Password)
+	email := c.PostForm("email")
+	password := c.PostForm("password")
+
+	u, err := h.UserService.Login(c.Request.Context(), email, password)
 
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		logger.Log.Info("invalid credentials", "email", email)
+		c.Redirect(http.StatusFound, "/login?error=Invalid+credentials&redirect_uri="+url.QueryEscape(redirectURI))
 		return
 	}
 
 	token, err := h.JwtEngine.Generate(u.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+		logger.Log.ErrorWithStack("login failed", err)
+		c.Redirect(http.StatusFound, "/login?error=Login+Failed&redirect_uri="+url.QueryEscape(redirectURI))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
-
-}
-
-func (h *UserHandler) getProfile(c *gin.Context) {
-	u, exists := c.Get("user")
-
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-
-	currentUser := u.(*user.User)
-
-	c.JSON(http.StatusOK, gin.H{
-		"id":    currentUser.ID,
-		"email": currentUser.Email,
-	})
+	c.SetCookie("auth_token", token, 3600, "/", "localhost", true, true)
+	c.Redirect(http.StatusFound, redirectURI)
 }
