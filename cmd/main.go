@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -9,12 +10,16 @@ import (
 
 	"net/http"
 
+	pb "github.com/Vin-Xi/auth/gen/token"
 	"github.com/Vin-Xi/auth/internal/database"
 	internal "github.com/Vin-Xi/auth/internal/database"
 	"github.com/Vin-Xi/auth/internal/transport"
+	transportGrpc "github.com/Vin-Xi/auth/internal/transport/grpc"
 	util "github.com/Vin-Xi/auth/internal/util"
+
 	"github.com/Vin-Xi/auth/pkg/logger"
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
 
 	service "github.com/Vin-Xi/auth/internal/service"
 )
@@ -38,6 +43,8 @@ func main() {
 	userRepo := database.NewPostresRepository(pool)
 	userService := service.NewService(userRepo)
 	jwtEngine := util.NewJWTEngine(jwtSecret, 15*time.Minute)
+
+	grpcTokenServer := transportGrpc.NewTokenServer(userService, jwtEngine)
 	userHttpHandler := transport.UserHandler{UserService: userService, JwtEngine: jwtEngine}
 	webHttpHandler := transport.WebHandler{}
 
@@ -56,6 +63,20 @@ func main() {
 		logger.Log.Info("Server started listening on 8080")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Log.ErrorWithStack("Fatal error", err)
+		}
+	}()
+
+	go func() {
+		lis, err := net.Listen("tcp", ":50051")
+		if err != nil {
+			logger.Log.ErrorWithStack("Fatal err", err)
+		}
+		s := grpc.NewServer()
+		pb.RegisterAuthServiceServer(s, grpcTokenServer)
+		logger.Log.Info("server listening at" + lis.Addr().String())
+
+		if err := s.Serve(lis); err != nil {
+			logger.Log.ErrorWithStack("Failed to serve", err)
 		}
 	}()
 
